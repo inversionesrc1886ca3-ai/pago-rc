@@ -1,56 +1,58 @@
 import os
 import requests
+import jwt  # Necesitas instalarlo: pip install PyJWT
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-# --- CONFIGURACIÓN DE TOKENS (API KEYS) ---
-# Aquí colocarás los valores que el BNC te asigne. No deben ser iguales.
-TOKEN_PRODUCCION = "VALOR_QUE_TE_DE_EL_BANCO_REAL"
-TOKEN_DESARROLLO = "VALOR_QUE_TE_DE_EL_BANCO_PRUEBAS"
+# --- LLAVES SECRETAS PARA JWT (Proporcionadas por el BNC) ---
+# El Token JWT se firma con una "Secret Key". Estas no deben ser iguales.
+JWT_SECRET_PROD = "SECRETO_REAL_DEL_BANCO"
+JWT_SECRET_DEV = "SECRETO_PRUEBAS_DEL_BANCO"
 
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxI1SPoPIVyMmcvqKhURDD5vf94seZOrtRKeD39x5TNT2mEtRVkXWCgy2a_cJ4VoDg7A/exec"
 
-def enviar_a_google(datos, ambiente):
-    datos['Ambiente'] = ambiente 
+def validar_jwt(token, secreto):
     try:
-        respuesta = requests.post(SCRIPT_URL, json=datos, timeout=15)
-        return respuesta.text
+        # El banco envía el token, nosotros lo verificamos con el secreto
+        decoded = jwt.decode(token, secreto, algorithms=["HS256"])
+        return True, decoded
     except Exception as e:
-        return "error_conexion"
+        return False, str(e)
 
-# 🚀 RUTA DE PRODUCCIÓN
+# 🚀 RUTA DE PRODUCCIÓN (JWT)
 @app.route('/webhook-bnc', methods=['POST'])
 def webhook_produccion():
-    # El BNC envía el token en 'x-api-key'
-    token_recibido = request.headers.get("x-api-key")
+    # El BNC suele enviar el JWT en el header 'Authorization' o 'x-api-key'
+    token = request.headers.get("x-api-key")
     
-    # Validación: Si el token no coincide con el de Producción, rechazamos
-    if token_recibido != TOKEN_PRODUCCION:
-        return jsonify({"status": "error", "message": "Token de Producción Inválido"}), 401
+    esta_bien, datos_token = validar_jwt(token, JWT_SECRET_PROD)
+    
+    if not esta_bien:
+        return jsonify({"status": "error", "message": "JWT Producción Inválido"}), 401
 
     datos = request.get_json()
-    resultado = enviar_a_google(datos, "PRODUCCIÓN")
-    
-    if "Duplicada" in resultado:
-        return jsonify({"status": "error", "message": "Referencia Duplicada"}), 400
+    respuesta_excel = requests.post(SCRIPT_URL, json={**datos, "Ambiente": "PRODUCCIÓN"})
     return jsonify({"status": "success"}), 200
 
-# 🧪 RUTA DE DESARROLLO
+# 🧪 RUTA DE DESARROLLO (JWT)
 @app.route('/webhook-bnc-dev', methods=['POST'])
 def webhook_desarrollo():
-    token_recibido = request.headers.get("x-api-key")
+    token = request.headers.get("x-api-key")
     
-    # Validación: Si el token no coincide con el de Desarrollo, rechazamos
-    if token_recibido != TOKEN_DESARROLLO:
-        return jsonify({"status": "error", "message": "Token de Desarrollo Inválido"}), 401
+    esta_bien, datos_token = validar_jwt(token, JWT_SECRET_DEV)
+    
+    if not esta_bien:
+        return jsonify({"status": "error", "message": "JWT Desarrollo Inválido"}), 401
 
     datos = request.get_json()
-    resultado = enviar_a_google(datos, "DESARROLLO")
+    requests.post(SCRIPT_URL, json={**datos, "Ambiente": "DESARROLLO"})
     return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+   
+   
