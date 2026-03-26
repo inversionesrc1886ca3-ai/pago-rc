@@ -88,39 +88,38 @@
         const mensaje = document.getElementById('messageCell');
         const status = document.getElementById('statusCell');
 
-        // Capturar los datos del formulario
+        // Capturamos los datos que escriben tus empleados
         const datos = {
             DebtorID: document.getElementById('DebtorID').value,
-            DebtorCellPhone: document.getElementById('DebtorCellPhone').value,
-            Amount: document.getElementById('Amount').value,
-            Reference: document.getElementById('Reference').value
+            Reference: document.getElementById('Reference').value,
+            Amount: document.getElementById('Amount').value
         };
-// Mostrar tabla y aviso de carga
+
         tabla.style.display = 'table';
-        mensaje.innerText = "Consultando con el servidor RC...";
-        status.innerText = "ESPERE";
+        mensaje.innerText = "Consultando con el servidor de Inversiones RC...";
+        status.innerText = "...";
 
         try {
-            // LLAMADA A TU API EN RENDER
+            // Esta es la conexión con tu Render vivo
             const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(datos)
             });
 
             const resultado = await respuesta.json();
             
-            // Mostrar la respuesta del servidor Python
+            // Aquí se muestra el mensaje real de Python
             status.innerText = resultado.status;
             mensaje.innerText = resultado.mensaje;
 
         } catch (error) {
             status.innerText = "ERROR";
-            mensaje.innerText = "No se pudo conectar con el servidor. Revisa si Render está Live.";
-            console.error("Error:", error);
+            mensaje.innerText = "No se pudo conectar. Verifica que Render esté encendido.";
         }
     }
 </script>
+
 
 </body>
 </html>
