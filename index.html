@@ -120,8 +120,6 @@
 
 <script>
     const API_URL = "https://inversiones-rc-prod.onrender.com"; 
-    const BNC_USER = "admin_rc"; 
-    const BNC_PASS = "123456";
 
     document.getElementById('pagoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -131,46 +129,30 @@
         
         btn.disabled = true;
         msg.style.color = "#ff9800";
-        msg.innerText = "Verificando pago...";
+        msg.innerText = "Registrando pago...";
 
         try {
-            // 1. OBTENER TOKEN JWT
-            const authRes = await fetch(`${API_URL}/auth`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "Login": BNC_USER, "Password": BNC_PASS })
-            });
-
-            if (!authRes.ok) throw new Error("Acceso no autorizado");
-            const token = await authRes.text();
-
-            // 2. PREPARAR DATOS
+            // Recogemos los datos directamente de tus inputs actuales
             const datos = {
                 PaymentType: document.getElementById('PaymentType').value,
                 DestinyBankReference: document.getElementById('DestinyBankReference').value,
                 Amount: document.getElementById('Amount').value,
-                ClientID: document.getElementById('ClientID').value,
-                Date: new Date().toLocaleString('es-VE')
+                ClientID: document.getElementById('ClientID').value
             };
 
-            // 3. ENVIAR A RENDER (CORREGIDO CON COMILLAS INVERTIDAS)
-            const res = await fetch(`https://inversiones-rc-prod.onrender.com/webhook-bnc`, {
+            // Enviamos directo a Render sin pedir el Token viejo
+            const res = await fetch(`${API_URL}/webhook-bnc`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
             });
 
-            const resultado = await res.json();
-
             if (res.ok) {
                 msg.style.color = "#4CAF50"; 
-                msg.innerText = "✅ " + resultado.message;
+                msg.innerText = "✅ ¡PAGO REGISTRADO EXITOSAMENTE!";
                 document.getElementById('pagoForm').reset();
             } else {
-                throw new Error(resultado.message || "Error en el registro");
+                throw new Error("Error en el servidor");
             }
         } catch (error) {
             msg.style.color = "#ff5722";
