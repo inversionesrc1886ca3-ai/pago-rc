@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inversiones RC - Registro de Pagos</title>
     <style>
-        /* ESTILO PERSONALIZADO INVERSIONES RC (NEGRO Y NARANJA) */
+        /* ESTILO PERSONALIZADO INVERSIONES RC */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #1a1a1a; /* Fondo Negro */
@@ -17,45 +17,53 @@
             margin: 0;
         }
         .card {
-            background-color: #2d2d2d; /* Gris muy oscuro */
+            background-color: #2d2d2d; /* Gris oscuro */
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
             width: 100%;
             max-width: 400px;
-            border-top: 5px solid #ff9800; /* Línea Naranja arriba */
+            border-top: 5px solid #ff5722; /* Naranja vibrante */
+            text-align: center;
+        }
+        .logo {
+            max-width: 120px;
+            margin-bottom: 15px;
+            border-radius: 10px;
         }
         h2 {
-            text-align: center;
-            color: #ff9800; /* Naranja */
-            margin-bottom: 20px;
+            color: #ff5722;
+            margin-bottom: 25px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+            font-size: 1.4em;
         }
         label {
             display: block;
+            text-align: left;
             margin-bottom: 5px;
-            color: #ccc;
-            font-size: 0.9em;
+            color: #bbb;
+            font-size: 0.85em;
         }
         input, select {
             width: 100%;
             padding: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             border: 1px solid #444;
             border-radius: 8px;
-            background-color: #3d3d3d;
+            background-color: #333;
             color: white;
             box-sizing: border-box;
+            font-size: 1em;
         }
         input:focus {
             outline: none;
-            border-color: #ff9800;
+            border-color: #ff5722;
         }
         button {
             width: 100%;
             padding: 15px;
-            background-color: #ff9800; /* Naranja */
+            background-color: #ff9800; /* Naranja botón */
             color: black;
             border: none;
             border-radius: 8px;
@@ -63,31 +71,28 @@
             font-size: 16px;
             cursor: pointer;
             transition: 0.3s;
+            text-transform: uppercase;
         }
         button:hover {
             background-color: #e68a00;
-            transform: translateY(-2px);
+            transform: scale(1.02);
         }
         button:disabled {
-            background-color: #777;
+            background-color: #666;
             cursor: not-allowed;
         }
         #mensaje {
             margin-top: 15px;
-            text-align: center;
             font-weight: bold;
+            font-size: 0.9em;
             min-height: 20px;
-        }
-        .logo {
-            display: block;
-            margin: 0 auto 10px;
-            max-width: 100px; /* Ajusta según tu logo */
         }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <img src="https://i.imgur.com/uG9XGPr.png" alt="Inversiones RC Logo" class="logo">
     <h2>Inversiones RC</h2>
     
     <form id="pagoForm">
@@ -99,7 +104,7 @@
         </select>
 
         <label>Referencia Bancaria</label>
-        <input type="text" id="DestinyBankReference" placeholder="Últimos 6 u 8 dígitos" required>
+        <input type="text" id="DestinyBankReference" placeholder="Ej: 12345678" required>
 
         <label>Monto (Bs.)</label>
         <input type="number" step="0.01" id="Amount" placeholder="0.00" required>
@@ -107,19 +112,17 @@
         <label>Cédula / RIF del Cliente</label>
         <input type="text" id="ClientID" placeholder="V-12345678" required>
 
-        <button type="submit" id="btnEnviar">REGISTRAR PAGO</button>
+        <button type="submit" id="btnEnviar">Registrar Pago</button>
     </form>
     
     <div id="mensaje"></div>
 </div>
 
 <script>
-    // ==========================================
-    // CONFIGURACIÓN DE SEGURIDAD (EDITA AQUÍ)
-    // ==========================================
+    // CONFIGURACIÓN DE SEGURIDAD RENDER
     const API_URL = "https://inversiones-rc-prod.onrender.com"; 
-    const BNC_USER = "admin_rc"; // REVISA QUE SEA IGUAL A RENDER
-    const BNC_PASS = "123456";   // REVISA QUE SEA IGUAL A RENDER
+    const BNC_USER = "admin_rc"; // Verifica que sea el mismo de Render
+    const BNC_PASS = "123456";   // Verifica que sea el mismo de Render
 
     document.getElementById('pagoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -127,20 +130,19 @@
         const btn = document.getElementById('btnEnviar');
         const msg = document.getElementById('mensaje');
         
-        // Bloquear botón y mostrar carga
         btn.disabled = true;
         msg.style.color = "#ff9800";
-        msg.innerText = "Verificando con el servidor...";
+        msg.innerText = "Verificando pago...";
 
         try {
-            // 1. OBTENER TOKEN (JWT)
+            // 1. OBTENER TOKEN JWT
             const authRes = await fetch(${API_URL}/auth, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ "Login": BNC_USER, "Password": BNC_PASS })
             });
 
-            if (!authRes.ok) throw new Error("Acceso denegado: Revisa usuario/clave");
+            if (!authRes.ok) throw new Error("Acceso no autorizado");
             const token = await authRes.text();
 
             // 2. PREPARAR DATOS
@@ -149,10 +151,10 @@
                 DestinyBankReference: document.getElementById('DestinyBankReference').value,
                 Amount: document.getElementById('Amount').value,
                 ClientID: document.getElementById('ClientID').value,
-                Date: new Date().toLocaleString()
+                Date: new Date().toLocaleString('es-VE')
             };
 
-            // 3. ENVIAR A RENDER -> EXCEL
+            // 3. ENVIAR A RENDER
             const res = await fetch(${API_URL}/webhook-bnc, {
                 method: 'POST',
                 headers: { 
@@ -163,17 +165,16 @@
             });
 
             if (res.ok) {
-                msg.style.color = "#4CAF50"; // Verde éxito
-                msg.innerText = "✅ PAGO REGISTRADO EXITOSAMENTE";
+                msg.style.color = "#4CAF50"; 
+                msg.innerText = "✅ REGISTRO EXITOSO";
                 document.getElementById('pagoForm').reset();
             } else {
-                throw new Error("Error al guardar en la base de datos");
+                throw new Error("Error al guardar en el sistema");
             }
 
         } catch (err) {
-            msg.style.color = "#f44336"; // Rojo error
+            msg.style.color = "#f44336"; 
             msg.innerText = "❌ " + err.message;
-            console.error(err);
         } finally {
             btn.disabled = false;
         }
