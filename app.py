@@ -6,7 +6,11 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# URL de tu Google Sheets (No cambia)
+# --- CONFIGURACIÓN DE TOKENS (API KEYS) ---
+# Aquí colocarás los valores que el BNC te asigne. No deben ser iguales.
+TOKEN_PRODUCCION = "VALOR_QUE_TE_DE_EL_BANCO_REAL"
+TOKEN_DESARROLLO = "VALOR_QUE_TE_DE_EL_BANCO_PRUEBAS"
+
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxI1SPoPIVyMmcvqKhURDD5vf94seZOrtRKeD39x5TNT2mEtRVkXWCgy2a_cJ4VoDg7A/exec"
 
 def enviar_a_google(datos, ambiente):
@@ -17,32 +21,35 @@ def enviar_a_google(datos, ambiente):
     except Exception as e:
         return "error_conexion"
 
-# RUTA DE PRODUCCIÓN
+# 🚀 RUTA DE PRODUCCIÓN
 @app.route('/webhook-bnc', methods=['POST'])
 def webhook_produccion():
-    # COMPARACIÓN: Aquí leemos la variable que el banco colocará
-    api_key_del_banco = request.headers.get("x-api-key")
+    # El BNC envía el token en 'x-api-key'
+    token_recibido = request.headers.get("x-api-key")
     
+    # Validación: Si el token no coincide con el de Producción, rechazamos
+    if token_recibido != TOKEN_PRODUCCION:
+        return jsonify({"status": "error", "message": "Token de Producción Inválido"}), 401
+
     datos = request.get_json()
-    
-    # Procesamos el envío al Excel de Inversiones RC
     resultado = enviar_a_google(datos, "PRODUCCIÓN")
     
     if "Duplicada" in resultado:
-        return jsonify({"status": "error", "message": "Referencia ya registrada"}), 400
-    
-    # Respondemos 200 OK al banco para que sepan que recibimos bien la llave
-    return jsonify({"status": "success", "info": "Recibido con llave"}), 200
+        return jsonify({"status": "error", "message": "Referencia Duplicada"}), 400
+    return jsonify({"status": "success"}), 200
 
-# RUTA DE DESARROLLO
+# 🧪 RUTA DE DESARROLLO
 @app.route('/webhook-bnc-dev', methods=['POST'])
 def webhook_desarrollo():
-    # También leemos la llave en desarrollo por si el banco la envía ahí
-    api_key_del_banco = request.headers.get("x-api-key")
+    token_recibido = request.headers.get("x-api-key")
     
+    # Validación: Si el token no coincide con el de Desarrollo, rechazamos
+    if token_recibido != TOKEN_DESARROLLO:
+        return jsonify({"status": "error", "message": "Token de Desarrollo Inválido"}), 401
+
     datos = request.get_json()
     resultado = enviar_a_google(datos, "DESARROLLO")
-    return jsonify({"status": "success", "message": "Prueba de desarrollo recibida"}), 200
+    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
