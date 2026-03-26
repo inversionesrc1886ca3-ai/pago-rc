@@ -7,7 +7,7 @@ import requests
 import threading
 from functools import wraps
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DINÁMICA POR ENTORNO ---
@@ -81,5 +81,5 @@ def mapear_y_registrar(datos):
     except:
         pass
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
