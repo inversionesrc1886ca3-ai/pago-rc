@@ -81,6 +81,7 @@
 
     <div class="footer">SISTEMA DE VERIFICACIÓN RC v1.0</div>
 </div>
+
 <script>
     async function verificarPago() {
         const tabla = document.getElementById('tablaResultado');
@@ -95,9 +96,8 @@
         tabla.style.display = 'table';
         mensaje.innerText = "Consultando con el servidor RC...";
         status.innerText = "ESPERE";
-
-        try {
-            // USAMOS EL LINK QUE YA ESTÁ LIVE
+try {
+            // Conexión con tu servidor de Inversiones RC en Render
             const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -106,16 +106,16 @@
 
             const resultado = await respuesta.json();
             
-            // Aquí es donde recibirás el mensaje de éxito
+            // Respuesta directa desde tu app.py
             status.innerText = resultado.status;
             mensaje.innerText = resultado.mensaje;
 
         } catch (error) {
             status.innerText = "ERROR";
-            mensaje.innerText = "El servidor está despertando. Intenta de nuevo en 10 segundos.";
+            mensaje.innerText = "El servidor de RC está despertando. Reintenta en 15 segundos.";
         }
     }
 </script>
+
 </body>
 </html>
-
