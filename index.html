@@ -153,30 +153,26 @@
                 Date: new Date().toLocaleString('es-VE')
             };
 
-            // 3. ENVIAR A RENDER (Corregido con comillas invertidas)
-            const res = await fetch(`${API_URL}/webhook-bnc`, {
+     // 3. ENVIAR A RENDER
+            const res = await fetch(${API_URL}/webhook-bnc, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': Bearer ${token} 
                 },
                 body: JSON.stringify(datos)
             });
 
+            const resultado = await res.json();
+
             if (res.ok) {
                 msg.style.color = "#4CAF50"; 
-                msg.innerText = "✅ REGISTRO EXITOSO";
+                msg.innerText = "✅ " + resultado.message;
                 document.getElementById('pagoForm').reset();
             } else {
-                throw new Error("Error al guardar en el sistema");
+                // AQUÍ SE MUESTRA EL ERROR DE DUPLICADO
+                throw new Error(resultado.message || "Error en el registro");
             }
-
-        } catch (err) {
-            msg.style.color = "#f44336"; 
-            msg.innerText = "❌ " + err.message;
-        } finally {
-            btn.disabled = false;
-        }
     });
 </script>
 </body>
