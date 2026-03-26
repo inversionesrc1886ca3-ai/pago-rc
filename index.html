@@ -8,7 +8,7 @@
         /* ESTILO PERSONALIZADO INVERSIONES RC */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a; /* Fondo Negro */
+            background-color: #1a1a1a;
             color: #ffffff;
             display: flex;
             justify-content: center;
@@ -17,13 +17,13 @@
             margin: 0;
         }
         .card {
-            background-color: #2d2d2d; /* Gris oscuro */
+            background-color: #2d2d2d;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.6);
             width: 100%;
             max-width: 400px;
-            border-top: 5px solid #ff5722; /* Naranja vibrante */
+            border-top: 5px solid #ff5722;
             text-align: center;
         }
         .logo {
@@ -63,7 +63,7 @@
         button {
             width: 100%;
             padding: 15px;
-            background-color: #ff9800; /* Naranja botón */
+            background-color: #ff9800;
             color: black;
             border: none;
             border-radius: 8px;
@@ -119,10 +119,9 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN DE SEGURIDAD RENDER
     const API_URL = "https://inversiones-rc-prod.onrender.com"; 
-    const BNC_USER = "admin_rc"; // Verifica que sea el mismo de Render
-    const BNC_PASS = "123456";   // Verifica que sea el mismo de Render
+    const BNC_USER = "admin_rc"; 
+    const BNC_PASS = "123456";
 
     document.getElementById('pagoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -135,8 +134,8 @@
         msg.innerText = "Verificando pago...";
 
         try {
-            // 1. OBTENER TOKEN JWT
-            const authRes = await fetch(${API_URL}/auth, {
+            // 1. OBTENER TOKEN JWT (Corregido con comillas invertidas)
+            const authRes = await fetch(`${API_URL}/auth`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ "Login": BNC_USER, "Password": BNC_PASS })
@@ -154,12 +153,12 @@
                 Date: new Date().toLocaleString('es-VE')
             };
 
-            // 3. ENVIAR A RENDER
-            const res = await fetch(${API_URL}/webhook-bnc, {
+            // 3. ENVIAR A RENDER (Corregido con comillas invertidas)
+            const res = await fetch(`${API_URL}/webhook-bnc`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': Bearer ${token} 
+                    'Authorization': `Bearer ${token}` 
                 },
                 body: JSON.stringify(datos)
             });
