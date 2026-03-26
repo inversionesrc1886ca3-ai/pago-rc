@@ -1,6 +1,4 @@
 flask
 flask-cors
-requests
-pyJWT
-gunicorn
-cryptography
+gspread
+oauth2client
