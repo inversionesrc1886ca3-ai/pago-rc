@@ -26,19 +26,23 @@
 <div id="panel">
     <div class="logo-text">RC</div>
     <div class="sub-logo">INVERSIONES</div>
-    <h2>Validador de Pagos</h2>
+    <h2>VALIDADOR DE PAGOS</h2>
 
     <div class="input-group">
         <label>Nombre del Vendedor</label>
-        <input type="text" id="Vendedor" placeholder="Tu nombre" required>
+        <input type="text" id="Vendedor" placeholder="Ej: Oriana" required>
     </div>
     <div class="input-group">
-        <label>Referencia (6 últimos dígitos)</label>
-        <input type="text" id="Reference" placeholder="Ej: 123456">
+        <label>Cédula del Cliente</label>
+        <input type="text" id="DebtorID" placeholder="Ej: V23000760">
     </div>
     <div class="input-group">
         <label>Monto del Pago (Bs.)</label>
         <input type="number" step="0.01" id="Amount" placeholder="0.00">
+    </div>
+    <div class="input-group">
+        <label>Referencia (6 últimos dígitos)</label>
+        <input type="text" id="Reference" placeholder="Ej: 256377">
     </div>
 
     <button onclick="verificarPago()">VERIFICAR Y REGISTRAR</button>
@@ -48,11 +52,11 @@
         <tbody>
             <tr>
                 <td id="statusCell" class="status-ok">...</td>
-                <td id="messageCell">Esperando...</td>
+                <td id="messageCell">Esperando datos...</td>
             </tr>
         </tbody>
     </table>
-    <div class="footer">REGISTRO DE OPERACIONES RC v1.1</div>
+    <div class="footer">REGISTRO DE OPERACIONES RC v1.2</div>
 </div>
 
 <script>
@@ -65,17 +69,18 @@
         const status = document.getElementById('statusCell');
 
         tabla.style.display = 'table';
-        mensaje.innerText = "Registrando...";
+        mensaje.innerText = "Procesando...";
         status.innerText = "ESPERE";
 
         try {
             const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     Vendedor: vendedor,
-Reference: document.getElementById('Reference').value,
-                    Amount: document.getElementById('Amount').value
+                    DebtorID: document.getElementById('DebtorID').value,
+                    Amount: document.getElementById('Amount').value,
+                    Reference: document.getElementById('Reference').value
                 })
             });
             const resultado = await respuesta.json();
@@ -83,7 +88,7 @@ Reference: document.getElementById('Reference').value,
             mensaje.innerText = resultado.mensaje;
         } catch (error) {
             status.innerText = "ERROR";
-            mensaje.innerText = "Servidor RC cargando... Reintenta en 10 seg.";
+            mensaje.innerText = "El servidor está cargando. Reintenta en 10 seg.";
         }
     }
 </script>
