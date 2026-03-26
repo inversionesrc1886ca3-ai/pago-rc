@@ -86,7 +86,7 @@ def mapear_y_registrar(datos):
         print(f"Error en registro: {e}")
 
 # --- CORRECCIÓN CRÍTICA DEL PUERTO PARA RENDER ---
-if _name_ == '_main_':
+if __name__ == '__main__':
     # Render inyecta el puerto en la variable de entorno PORT
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
