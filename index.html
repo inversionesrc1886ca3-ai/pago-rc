@@ -134,7 +134,7 @@
         msg.innerText = "Verificando pago...";
 
         try {
-            // 1. OBTENER TOKEN JWT (Corregido con comillas invertidas)
+            // 1. OBTENER TOKEN JWT
             const authRes = await fetch(`${API_URL}/auth`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -153,12 +153,12 @@
                 Date: new Date().toLocaleString('es-VE')
             };
 
-     // 3. ENVIAR A RENDER
-            const res = await fetch(${API_URL}/webhook-bnc, {
+            // 3. ENVIAR A RENDER (CORREGIDO CON COMILLAS INVERTIDAS)
+            const res = await fetch(`${API_URL}/webhook-bnc`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': Bearer ${token} 
+                    'Authorization': `Bearer ${token}` 
                 },
                 body: JSON.stringify(datos)
             });
@@ -170,9 +170,14 @@
                 msg.innerText = "✅ " + resultado.message;
                 document.getElementById('pagoForm').reset();
             } else {
-                // AQUÍ SE MUESTRA EL ERROR DE DUPLICADO
                 throw new Error(resultado.message || "Error en el registro");
             }
+        } catch (error) {
+            msg.style.color = "#ff5722";
+            msg.innerText = "❌ Error: " + error.message;
+        } finally {
+            btn.disabled = false;
+        }
     });
 </script>
 </body>
