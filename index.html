@@ -73,7 +73,7 @@
         </thead>
         <tbody>
             <tr>
-                <td id="statusCell" class="status-ok">RECIBIDO</td>
+                <td id="statusCell" class="status-ok">...</td>
                 <td id="messageCell">Esperando respuesta...</td>
             </tr>
         </tbody>
@@ -83,11 +83,45 @@
 </div>
 
 <script>
-    function verificarPago() {
-        document.getElementById('tablaResultado').style.display = 'table';
-        document.getElementById('messageCell').innerText = "Conectando con BNC...";
-        console.log("Iniciando validación para Inversiones RC...");
+    async function verificarPago() {
+        const tabla = document.getElementById('tablaResultado');
+        const mensaje = document.getElementById('messageCell');
+        const status = document.getElementById('statusCell');
+
+        // Capturar los datos del formulario
+        const datos = {
+            DebtorID: document.getElementById('DebtorID').value,
+            DebtorCellPhone: document.getElementById('DebtorCellPhone').value,
+            Amount: document.getElementById('Amount').value,
+            Reference: document.getElementById('Reference').value
+        };
+// Mostrar tabla y aviso de carga
+        tabla.style.display = 'table';
+        mensaje.innerText = "Consultando con el servidor RC...";
+        status.innerText = "ESPERE";
+
+        try {
+            // LLAMADA A TU API EN RENDER
+            const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+            
+            // Mostrar la respuesta del servidor Python
+            status.innerText = resultado.status;
+            mensaje.innerText = resultado.mensaje;
+
+        } catch (error) {
+            status.innerText = "ERROR";
+            mensaje.innerText = "No se pudo conectar con el servidor. Revisa si Render está Live.";
+            console.error("Error:", error);
+        }
     }
 </script>
+
 </body>
 </html>
+
