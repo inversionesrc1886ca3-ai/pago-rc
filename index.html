@@ -98,7 +98,63 @@
             btn.disabled = false;
         }
     });
-</script>
+// CONFIGURACIÓN DE INVERSIONES RC
+    const API_URL = "https://inversiones-rc-prod.onrender.com"; 
+    const BNC_USER = "TU_USUARIO"; // Pon el que configuraste en Render
+    const BNC_PASS = "TU_PASS";    // Pon el que configuraste en Render
+
+    document.getElementById('pagoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnEnviar');
+        const msg = document.getElementById('mensaje');
+        
+        btn.disabled = true;
+        msg.innerText = "Procesando...";
+
+        try {
+            // 1. PEDIR TOKEN AL SERVIDOR
+            const authRes = await fetch(${API_URL}/auth, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "Login": BNC_USER, "Password": BNC_PASS })
+            });
+
+            if (!authRes.ok) throw new Error("Credenciales incorrectas");
+            const token = await authRes.text();
+
+            // 2. ENVIAR DATOS DEL PAGO
+            const datos = {
+                PaymentType: document.getElementById('PaymentType').value,
+                DestinyBankReference: document.getElementById('DestinyBankReference').value,
+                Amount: document.getElementById('Amount').value,
+                ClientID: document.getElementById('ClientID').value,
+                Date: new Date().toLocaleString()
+            };
+
+            const res = await fetch(${API_URL}/webhook-bnc, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': Bearer ${token} 
+                },
+                body: JSON.stringify(datos)
+            });
+
+            if (res.ok) {
+                msg.style.color = "green";
+                msg.innerText = "✅ ¡Pago registrado en el Excel!";
+                document.getElementById('pagoForm').reset();
+            } else {
+                throw new Error("Error al guardar");
+            }
+
+        } catch (err) {
+            msg.style.color = "red";
+            msg.innerText = "❌ Error: " + err.message;
+        } finally {
+            btn.disabled = false;
+        }
+    });</script>
 
 </body>
 </html>
