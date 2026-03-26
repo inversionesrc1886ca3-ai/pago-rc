@@ -5,18 +5,17 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 import requests
 import threading
-from functools import wraps
+from datetime import datetime as dt # Corregido para evitar conflicto con el módulo
 
-app = Flask(__name__)
+app = Flask(_name_)
 CORS(app)
 
 # --- CONFIGURACIÓN DINÁMICA POR ENTORNO ---
-# APP_ENV debe ser 'production' o 'development' en Render
 ENV_MODE = os.getenv('APP_ENV', 'production')
-SHEETDB_URL = os.getenv('SHEETDB_URL') # URL única por entorno
-JWT_SECRET = os.getenv('JWT_SECRET_KEY')
-BNC_USER = os.getenv('BNC_USER')
-BNC_PASS = os.getenv('BNC_PASS')
+SHEETDB_URL = os.getenv('SHEETDB_URL') 
+JWT_SECRET = os.getenv('JWT_SECRET_KEY', 'secreto_temporal') # Valor por defecto si falla el env
+BNC_USER = os.getenv('BNC_USER', 'admin_rc')
+BNC_PASS = os.getenv('BNC_PASS', '123456')
 
 referencias_procesadas = set()
 
@@ -31,6 +30,10 @@ def auth():
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
         }, JWT_SECRET, algorithm="HS256")
         
+        # En versiones nuevas de PyJWT, token puede ser bytes, lo decodificamos
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
+            
         response = make_response(token, 200)
         response.mimetype = "text/plain"
         return response
@@ -38,20 +41,20 @@ def auth():
 
 @app.route('/webhook-bnc', methods=['GET', 'POST'])
 def webhook_bnc():
-    # PING OBLIGATORIO PARA CERTIFICACIÓN
     if request.method == 'GET':
         return make_response("OK", 200)
 
-    # NOTIFICACIÓN REAL (POST)
     auth_header = request.headers.get('Authorization')
     try:
+        # Extraer el token correctamente
         token = auth_header.split(" ")[1] if auth_header and " " in auth_header else auth_header
         jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         
         datos = request.json
+        # Ejecutar el registro en segundo plano para no hacer esperar al cliente
         threading.Thread(target=mapear_y_registrar, args=(datos,)).start()
         
-        return make_response(jsonify({"status": "SUCCESS", "env": ENV_MODE}), 200)
+        return jsonify({"status": "SUCCESS", "env": ENV_MODE}), 200
     except Exception as e:
         return make_response(f"Error de Produccion: {str(e)}", 400)
 
@@ -70,20 +73,20 @@ def mapear_y_registrar(datos):
         
         row_data = {
             "data": [{
-                "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "Referencia": ref,
+                "Fecha": dt.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "Referencia": str(ref),
                 "Monto": monto_f,
                 "Tipo": tipo,
-                "Ambiente": ENV_MODE.upper() # Para que veas "PRODUCTION" en tu Excel
+                "Ambiente": ENV_MODE.upper()
             }]
         }
+        # Enviamos a SheetDB
         requests.post(SHEETDB_URL, json=row_data)
-    except:
-        pass
+    except Exception as e:
+        print(f"Error en registro: {e}")
 
-if __name__ == '__main__':
-     import os
+# --- CORRECCIÓN CRÍTICA DEL PUERTO PARA RENDER ---
+if _name_ == '_main_':
+    # Render inyecta el puerto en la variable de entorno PORT
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
- 
