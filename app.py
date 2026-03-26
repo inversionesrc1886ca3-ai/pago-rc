@@ -7,19 +7,20 @@ CORS(app)
 @app.route('/verificar', methods=['POST'])
 def verificar():
     datos = request.json
-    vendedor = datos.get('Vendedor', 'Desconocido')
-    cedula = datos.get('DebtorID', 'N/A')
+    # Captura el nombre que viene desde el formulario
+    nombre_usuario = datos.get('Vendedor', 'Usuario') 
     ref = datos.get('Reference', 'Sin Ref')
+    cedula = datos.get('DebtorID', 'N/A')
     monto = datos.get('Amount', '0')
     
-    # Este es el reporte que verás en los Logs de Render
-    print(f"REPORT: {vendedor} validó a CI: {cedula} | Ref: {ref} | Monto: {monto} Bs.")
+    # Este reporte se guarda en tus Logs de Render
+    print(f"VALIDACIÓN: {nombre_usuario} verificó Ref: {ref} | CI: {cedula} | Monto: {monto}")
 
     return jsonify({
         "status": "RECIBIDO",
-        "mensaje": f"RC: {vendedor}, la ref {ref} ha sido registrada con éxito."
+        # Aquí es donde le responde con SU nombre
+        "mensaje": f"RC: {nombre_usuario}, la ref {ref} ha sido registrada con éxito."
     })
 
 if name == 'main':
     app.run(host='0.0.0.0', port=10000)
-
