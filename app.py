@@ -3,23 +3,30 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app) # Esto permite que tu HTML hable con Render
 
 @app.route('/')
 def home():
-    # Mensaje oficial de tu empresa
     return "Servidor Inversiones RC - OPERATIVO", 200
 
-@app.route('/webhook-bnc', methods=['GET', 'POST'])
+# Esta ruta recibe los datos de tu formulario
+@app.route('/webhook-bnc', methods=['POST'])
 def webhook_bnc():
-    if request.method == 'GET':
-        return "OK", 200
-    
-    return jsonify({
-        "Reference": "RECIBIDO",
-        "AuthorizationCode": "000000",
-        "SwAlreadySent": False
-    }), 200
+    try:
+        datos = request.get_json()
+        
+        # Imprimimos en la pantalla negra de Render para ver que llegaron
+        print(f"PAGO RECIBIDO: {datos}")
+        
+        # Aquí es donde el programa 'HACE ALGO'
+        # Por ahora, le confirmamos al HTML que llegó bien
+        return jsonify({
+            "status": "success",
+            "message": f"Pago {datos.get('DestinyBankReference')} registrado con éxito en Inversiones RC",
+            "Reference": "PROCESADO"
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
