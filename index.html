@@ -102,6 +102,15 @@
             const resultado = await respuesta.json();
             status.innerText = resultado.status;
             mensaje.innerText = resultado.mensaje;
+
+            // --- ESTO ES LO QUE BORRA EL FORMULARIO ---
+            if(resultado.status === "RECIBIDO") {
+                // Borra todo excepto el nombre del vendedor para que no tenga que escribirlo cada vez
+                document.getElementById('DebtorID').value = "";
+                document.getElementById('Phone').value = "";
+                document.getElementById('Amount').value = "";
+                document.getElementById('Reference').value = "";
+            }
         } catch (error) {
             status.innerText = "ERROR";
             mensaje.innerText = "Servidor cargando...";
