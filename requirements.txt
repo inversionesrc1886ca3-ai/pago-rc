@@ -3,4 +3,4 @@ flask-cors
 requests
 pyJWT
 gunicorn
-cryptography
+
