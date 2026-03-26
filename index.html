@@ -12,7 +12,7 @@
         h2{color:#ff9100;border-bottom:2px solid #ff9100;padding-bottom:10px;font-size:1.1em;margin-top:0;text-transform:uppercase}
         .input-group { text-align: left; margin-bottom: 12px; }
         label { color: #ff9100; font-size: 0.8em; font-weight: bold; margin-left: 5px; text-transform: uppercase; }
-        input { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #ff9100; border-radius: 8px; box-sizing:border-box; background:#222; color:#fff; font-size: 16px; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #ff9100; border-radius: 8px; box-sizing:border-box; background:#222; color:#fff; font-size: 16px; }
         button { width: 100%; padding: 15px; background: #ff9100; color: #000; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #fff; box-shadow: 0 0 15px #ff9100; }
         .result-table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
@@ -26,69 +26,85 @@
 <div id="panel">
     <div class="logo-text">RC</div>
     <div class="sub-logo">INVERSIONES</div>
-    <h2>VALIDADOR DE PAGOS</h2>
+    <h2>Validador de Pagos BNC</h2>
 
     <div class="input-group">
-        <label>Nombre del Vendedor</label>
-        <input type="text" id="Vendedor" placeholder="Ej: Oriana" required>
+        <label>Vendedor</label>
+        <input type="text" id="Vendedor" placeholder="Tu nombre" required>
     </div>
     <div class="input-group">
         <label>Cédula del Cliente</label>
         <input type="text" id="DebtorID" placeholder="Ej: V23000760">
     </div>
     <div class="input-group">
-        <label>Monto del Pago (Bs.)</label>
+        <label>Teléfono Origen</label>
+        <input type="number" id="Phone" placeholder="Ej: 584241234567">
+    </div>
+    <div class="input-group">
+        <label>Banco del Cliente</label>
+        <select id="Bank">
+            <option value="BNC">BNC</option>
+            <option value="BANESCO">BANESCO</option>
+            <option value="MERCANTIL">MERCANTIL</option>
+            <option value="PROVINCIAL">PROVINCIAL</option>
+            <option value="VENEZUELA">VENEZUELA</option>
+            <option value="OTRO">OTRO</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label>Monto (Bs.)</label>
         <input type="number" step="0.01" id="Amount" placeholder="0.00">
     </div>
     <div class="input-group">
-        <label>Referencia (6 últimos dígitos)</label>
-        <input type="text" id="Reference" placeholder="Ej: 256377">
+        <label>Referencia (6 últimos)</label>
+        <input type="text" id="Reference" placeholder="Ej: 123456">
     </div>
 
     <button onclick="verificarPago()">VERIFICAR Y REGISTRAR</button>
 
     <table class="result-table" id="tablaResultado">
-        <thead><tr><th>ESTADO</th><th>DETALLES</th></tr></thead>
+        <thead><tr><th>ESTADO</th><th>CONFIRMACIÓN</th></tr></thead>
         <tbody>
-            <tr>
-                <td id="statusCell" class="status-ok">...</td>
-                <td id="messageCell">Esperando datos...</td>
-            </tr>
+            <tr><td id="statusCell" class="status-ok">...</td><td id="messageCell">Esperando...</td></tr>
         </tbody>
     </table>
-    <div class="footer">REGISTRO DE OPERACIONES RC v1.2</div>
+    <div class="footer">SISTEMA OFICIAL INVERSIONES RC</div>
 </div>
 
 <script>
     async function verificarPago() {
         const vendedor = document.getElementById('Vendedor').value;
-        if(!vendedor) { alert("Por favor, ingresa tu nombre"); return; }
+        if(!vendedor) { alert("Ingresa tu nombre"); return; }
 
         const tabla = document.getElementById('tablaResultado');
         const mensaje = document.getElementById('messageCell');
         const status = document.getElementById('statusCell');
 
         tabla.style.display = 'table';
-        mensaje.innerText = "Procesando...";
+        mensaje.innerText = "Registrando...";
         status.innerText = "ESPERE";
+
+        const datos = {
+            Vendedor: vendedor,
+            DebtorID: document.getElementById('DebtorID').value,
+            Phone: document.getElementById('Phone').value,
+            Bank: document.getElementById('Bank').value,
+            Amount: document.getElementById('Amount').value,
+            Reference: document.getElementById('Reference').value
+        };
 
         try {
             const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    Vendedor: vendedor, // <--- Aquí captura el nombre que escriban
-                    DebtorID: document.getElementById('DebtorID').value,
-                    Amount: document.getElementById('Amount').value,
-                    Reference: document.getElementById('Reference').value
-                })
+                body: JSON.stringify(datos)
             });
             const resultado = await respuesta.json();
             status.innerText = resultado.status;
-            mensaje.innerText = resultado.mensaje; // <--- Aquí mostrará el nombre dinámico
+            mensaje.innerText = resultado.mensaje;
         } catch (error) {
             status.innerText = "ERROR";
-            mensaje.innerText = "Reintenta en 10 seg.";
+            mensaje.innerText = "Servidor cargando...";
         }
     }
 </script>
