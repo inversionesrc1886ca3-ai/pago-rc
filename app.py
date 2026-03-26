@@ -1,14 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import csv
+import requests
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Nombre del archivo donde se guardarán los pagos
-ARCHIVO_PAGOS = 'registro_ventas_rc.csv'
+# Tu link de SheetDB
+SHEETDB_URL = 'https://sheetdb.io/api/v1/bhei1rzhpt7os'
 
 @app.route('/verificar', methods=['POST'])
 def verificar():
@@ -17,23 +16,32 @@ def verificar():
     cedula = datos.get('DebtorID', 'N/A')
     ref = datos.get('Reference', 'Sin Ref')
     monto = datos.get('Amount', '0')
-    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-    # Guardar en el "Excel" (archivo CSV)
-    file_exists = os.path.isfile(ARCHIVO_PAGOS)
-    with open(ARCHIVO_PAGOS, mode='a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        # Si el archivo es nuevo, escribe los títulos de las columnas
-        if not file_exists:
-            writer.writerow(['Fecha', 'Vendedor', 'Cedula Cliente', 'Referencia', 'Monto Bs'])
-        
-        writer.writerow([fecha, vendedor, cedula, ref, monto])
+    # Preparamos los datos para Google Sheets
+    # Asegúrate de que los nombres coincidan con los títulos de tu Excel
+    row_data = {
+        "data": [
+            {
+                "Fecha": fecha,
+                "Vendedor": vendedor,
+                "Cedula": cedula,
+                "Referencia": ref,
+                "Monto": monto
+            }
+        ]
+    }
 
-    print(f"REGISTRADO EN EXCEL: {vendedor} - Ref: {ref}")
+    try:
+        # Enviamos los datos a SheetDB
+        requests.post(SHEETDB_URL, json=row_data)
+        print(f"Excel Actualizado: {vendedor} - Ref {ref}")
+    except Exception as e:
+        print(f"Error guardando en Excel: {e}")
 
     return jsonify({
         "status": "RECIBIDO",
-        "mensaje": f"RC: {vendedor}, la ref {ref} ha sido registrada en el sistema."
+        "mensaje": f"RC: {vendedor}, la ref {ref} ha sido registrada en el Excel."
     })
 
 if __name__ == '__main__':
