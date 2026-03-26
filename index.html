@@ -75,9 +75,9 @@
         try {
             const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
                 method: 'POST',
-headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    Vendedor: vendedor,
+                    Vendedor: vendedor, // <--- Aquí captura el nombre que escriban
                     DebtorID: document.getElementById('DebtorID').value,
                     Amount: document.getElementById('Amount').value,
                     Reference: document.getElementById('Reference').value
@@ -85,10 +85,10 @@ headers: {'Content-Type': 'application/json'},
             });
             const resultado = await respuesta.json();
             status.innerText = resultado.status;
-            mensaje.innerText = resultado.mensaje;
+            mensaje.innerText = resultado.mensaje; // <--- Aquí mostrará el nombre dinámico
         } catch (error) {
             status.innerText = "ERROR";
-            mensaje.innerText = "El servidor está cargando. Reintenta en 10 seg.";
+            mensaje.innerText = "Reintenta en 10 seg.";
         }
     }
 </script>
