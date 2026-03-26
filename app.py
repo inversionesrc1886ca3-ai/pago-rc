@@ -1,4 +1,4 @@
-[3:52 a.m., 26/3/2026] Eduardo Meza: import os
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
