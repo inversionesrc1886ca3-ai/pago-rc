@@ -6,44 +6,34 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Esta es la URL de tu Google Script que me acabas de pasar
+# URL de tu Google Sheets (No cambia)
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxI1SPoPIVyMmcvqKhURDD5vf94seZOrtRKeD39x5TNT2mEtRVkXWCgy2a_cJ4VoDg7A/exec"
 
-def anotar_en_excel(datos):
+def enviar_a_google(datos, ambiente):
+    datos['Ambiente'] = ambiente # Esto ayuda a RC a saber si es prueba o real
     try:
-        # Enviamos los datos directamente al Script de Google
-        respuesta = requests.post(SCRIPT_URL, json=datos, timeout=10)
-        if "Éxito" in respuesta.text:
-            return True
-        print(f"Respuesta del script: {respuesta.text}")
-        return False
+        respuesta = requests.post(SCRIPT_URL, json=datos, timeout=15)
+        return respuesta.text
     except Exception as e:
-        print(f"Error de conexión: {e}")
-        return False
+        return "error_conexion"
 
-@app.route('/')
-def home():
-    return "Servidor Inversiones RC - CONEXIÓN POR SCRIPT ACTIVA", 200
-
-@app.route('/auth', methods=['POST'])
-def auth():
-    return "token_valido_rc", 200
-
+# RUTA DE PRODUCCIÓN
 @app.route('/webhook-bnc', methods=['POST'])
-def webhook_bnc():
+def webhook_produccion():
     datos = request.get_json()
+    # Aquí el BNC pondrá su APIKEY en el header automáticamente
+    resultado = enviar_a_google(datos, "PRODUCCIÓN")
     
-    # Intentar anotar en la hoja de cálculo vía Script
-    if anotar_en_excel(datos):
-        return jsonify({
-            "status": "success", 
-            "message": f"Referencia {datos.get('DestinyBankReference')} anotada con éxito"
-        }), 200
-    else:
-        return jsonify({
-            "status": "error", 
-            "message": "Error al comunicar con el Excel. Revisa el Script."
-        }), 500
+    if "Duplicada" in resultado:
+        return jsonify({"status": "error", "message": "Referencia ya registrada"}), 400
+    return jsonify({"status": "success"}), 200
+
+# RUTA DE DESARROLLO
+@app.route('/webhook-bnc-dev', methods=['POST'])
+def webhook_desarrollo():
+    datos = request.get_json()
+    resultado = enviar_a_google(datos, "DESARROLLO")
+    return jsonify({"status": "success", "message": "Prueba recibida"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
