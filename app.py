@@ -7,19 +7,20 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 CORS(app)
 
-# CONFIGURACIÓN DE CONEXIÓN A GOOGLE
+# Configuración de Google
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 def anotar_en_excel(datos):
     try:
-        # Usamos el archivo de credenciales que ya tienes en GitHub
+        # 1. Cargar credenciales desde el archivo en GitHub
         creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
         client = gspread.authorize(creds)
         
-        # BUSCAMOS TU HOJA POR SU NOMBRE EXACTO
-        sheet = client.open("Registro de Pagos Rc").sheet1 
+        # 2. Abrir la hoja usando el ID que me pasaste
+        # Este ID es específico para "Registro de Pagos Rc"
+        sheet = client.open_by_key("1sJ2eYiEFOYMjvhrPt-6-kIDN3qi5xmfefNzc4qEAUmQ").sheet1 
         
-        # Preparamos la fila con la información que viene del formulario
+        # 3. Preparar la fila con los datos del formulario
         fila = [
             datos.get('Date'),
             datos.get('PaymentType'),
@@ -28,36 +29,36 @@ def anotar_en_excel(datos):
             datos.get('ClientID')
         ]
         
-        # Agregamos la fila al final de la hoja
+        # 4. Insertar la fila al final
         sheet.append_row(fila)
         return True
     except Exception as e:
-        print(f"Error al anotar en Registro de Pagos Rc: {e}")
+        print(f"Error técnico al anotar en Excel: {e}")
         return False
 
 @app.route('/')
 def home():
-    return "Servidor Inversiones RC - LISTO PARA REGISTRAR", 200
+    return "Servidor Inversiones RC - CONEXIÓN POR ID ACTIVA", 200
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    # Esta ruta permite que el formulario pase la validación
+    # Respuesta simple para validar el formulario
     return "token_valido_rc", 200
 
 @app.route('/webhook-bnc', methods=['POST'])
 def webhook_bnc():
     datos = request.get_json()
     
-    # Intentamos guardar en "Registro de Pagos Rc"
+    # Intentar anotar en la hoja de cálculo
     if anotar_en_excel(datos):
         return jsonify({
-            "status": "success",
-            "message": f"Referencia {datos.get('DestinyBankReference')} anotada en Excel"
+            "status": "success", 
+            "message": f"Referencia {datos.get('DestinyBankReference')} anotada con éxito"
         }), 200
     else:
         return jsonify({
-            "status": "error",
-            "message": "Servidor activo, pero no pudo escribir en el Excel. Verifica las credenciales."
+            "status": "error", 
+            "message": "Error de conexión con Google Sheets. Revisa permisos del JSON."
         }), 500
 
 if __name__ == '__main__':
