@@ -73,8 +73,8 @@
         </thead>
         <tbody>
             <tr>
-                <td id="statusCell" class="status-ok">---</td>
-                <td id="messageCell">Consultando...</td>
+                <td id="statusCell" class="status-ok">RECIBIDO</td>
+                <td id="messageCell">Esperando respuesta...</td>
             </tr>
         </tbody>
     </table>
@@ -83,10 +83,39 @@
 </div>
 
 <script>
-    function verificarPago() {
-        document.getElementById('tablaResultado').style.display = 'table';
-        document.getElementById('messageCell').innerText = "Conectando con BNC...";
-        console.log("Iniciando validación para Inversiones RC...");
+    async function verificarPago() {
+        const tabla = document.getElementById('tablaResultado');
+        const mensaje = document.getElementById('messageCell');
+        const status = document.getElementById('statusCell');
+
+        // Capturar datos del formulario
+        const datos = {
+            Reference: document.getElementById('Reference').value,
+            Amount: document.getElementById('Amount').value
+        };
+
+        tabla.style.display = 'table';
+        mensaje.innerText = "Conectando con el servidor RC...";
+        status.innerText = "...";
+try {
+            // AQUÍ CONECTAMOS CON TU RENDER
+            const respuesta = await fetch('https://api-pago-rc.onrender.com/verificar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+            
+            // Mostrar la respuesta real de Python
+            status.innerText = resultado.status;
+            mensaje.innerText = resultado.mensaje;
+
+        } catch (error) {
+            status.innerText = "ERROR";
+            mensaje.innerText = "No se pudo conectar con el servidor. Revisa si Render está encendido.";
+            console.error(error);
+        }
     }
 </script>
 
