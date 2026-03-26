@@ -7,7 +7,7 @@ import requests
 import threading
 from datetime import datetime as dt # Corregido para evitar conflicto con el módulo
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DINÁMICA POR ENTORNO ---
