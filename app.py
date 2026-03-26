@@ -1,39 +1,37 @@
 import os
 import requests
-import jwt  # Requiere PyJWT en el archivo requirements.txt
+import jwt
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  # <--- Esto es lo que arregla el "Failed to fetch"
 
 app = Flask(__name__)
-CORS(app)
+# Esta línea permite que tu formulario naranja pueda hablar con el servidor de Render
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# --- CONFIGURACIÓN DE ACCESOS BNC (Inversiones RC) ---
-# Los Login se mantienen, los Passwords son nuevos y diferentes
-
-# Ambiente: PRODUCCIÓN
+# --- CONFIGURACIÓN DE ACCESOS BNC ---
 LOGIN_PROD = "rc_prod_admin"
-PWD_PROD = "IRC_Secure_Prod_!99*77"  # <--- Nuevo Password Producción
-
-# Ambiente: DESARROLLO
+PWD_PROD = "IRC_Secure_Prod_!99*77"
 LOGIN_DEV = "rc_dev_user"
-PWD_DEV = "IRC_Test_Dev_#44_2026"     # <--- Nuevo Password Desarrollo
+PWD_DEV = "IRC_Test_Dev_#44_2026"
 
-# URL de tu Google Sheets (Apps Script)
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxI1SPoPIVyMmcvqKhURDD5vf94seZOrtRKeD39x5TNT2mEtRVkXWCgy2a_cJ4VoDg7A/exec"
 
 def validar_y_procesar(token_auth, login_esperado, pwd_esperado, ambiente_nombre):
     try:
-        # 1. Extraemos el token del header Authorization (Bearer)
-        token = token_auth.replace("Bearer ", "") if token_auth else ""
-        
-        # 2. Validamos el JWT con el Password correspondiente (HS256)
+        # Si el pago viene de tu formulario (sin token), saltamos la validación JWT
+        # para que puedas registrar pagos manualmente también.
+        if not token_auth:
+            datos = request.get_json()
+            datos['Ambiente'] = f"{ambiente_nombre} (MANUAL)"
+            requests.post(SCRIPT_URL, json=datos, timeout=15)
+            return True, "Ok"
+
+        # Validación para el Banco (JWT)
+        token = token_auth.replace("Bearer ", "")
         payload = jwt.decode(token, pwd_esperado, algorithms=["HS256"])
-        
-        # 3. Validamos que el Login (iss) coincida
         if payload.get("iss") != login_esperado:
-            return False, "Login (iss) no coincide"
+            return False, "Login no coincide"
             
-        # 4. Enviamos los datos al Excel
         datos = request.get_json()
         datos['Ambiente'] = ambiente_nombre
         requests.post(SCRIPT_URL, json=datos, timeout=15)
@@ -41,28 +39,20 @@ def validar_y_procesar(token_auth, login_esperado, pwd_esperado, ambiente_nombre
     except Exception as e:
         return False, str(e)
 
-# 🚀 ENDPOINT DE PRODUCCIÓN
-@app.route('/webhook-bnc', methods=['POST'])
+@app.route('/webhook-bnc', methods=['POST', 'OPTIONS'])
 def webhook_produccion():
+    if request.method == 'OPTIONS': return jsonify({"status": "ok"}), 200
     token_auth = request.headers.get("Authorization")
     exito, msg = validar_y_procesar(token_auth, LOGIN_PROD, PWD_PROD, "PRODUCCIÓN")
-    
-    if exito:
-        return jsonify({"status": "success", "msg": "Pago Real Registrado"}), 200
-    return jsonify({"status": "error", "message": msg}), 401
+    return (jsonify({"status": "success"}), 200) if exito else (jsonify({"error": msg}), 401)
 
-# 🧪 ENDPOINT DE DESARROLLO
-@app.route('/webhook-bnc-dev', methods=['POST'])
+@app.route('/webhook-bnc-dev', methods=['POST', 'OPTIONS'])
 def webhook_desarrollo():
+    if request.method == 'OPTIONS': return jsonify({"status": "ok"}), 200
     token_auth = request.headers.get("Authorization")
     exito, msg = validar_y_procesar(token_auth, LOGIN_DEV, PWD_DEV, "DESARROLLO")
-    
-    if exito:
-        return jsonify({"status": "success", "msg": "Prueba Registrada"}), 200
-    return jsonify({"status": "error", "message": msg}), 401
+    return (jsonify({"status": "success"}), 200) if exito else (jsonify({"error": msg}), 401)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
-
