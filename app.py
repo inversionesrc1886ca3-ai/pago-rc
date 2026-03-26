@@ -8,32 +8,32 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DE ACCESOS BNC (Inversiones RC) ---
-# Estos valores deben coincidir exactamente con los que pongas en el formulario del banco
+# Los Login se mantienen, los Passwords son nuevos y diferentes
 
 # Ambiente: PRODUCCIÓN
 LOGIN_PROD = "rc_prod_admin"
-PWD_PROD = "InversionesRC_Real_BNC_#77"
+PWD_PROD = "IRC_Secure_Prod_!99*77"  # <--- Nuevo Password Producción
 
 # Ambiente: DESARROLLO
 LOGIN_DEV = "rc_dev_user"
-PWD_DEV = "RC_Pruebas_2026_BNC"
+PWD_DEV = "IRC_Test_Dev_#44_2026"     # <--- Nuevo Password Desarrollo
 
 # URL de tu Google Sheets (Apps Script)
 SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxI1SPoPIVyMmcvqKhURDD5vf94seZOrtRKeD39x5TNT2mEtRVkXWCgy2a_cJ4VoDg7A/exec"
 
 def validar_y_procesar(token_auth, login_esperado, pwd_esperado, ambiente_nombre):
     try:
-        # 1. Limpiamos el token del header Authorization (quita el "Bearer ")
+        # 1. Extraemos el token del header Authorization (Bearer)
         token = token_auth.replace("Bearer ", "") if token_auth else ""
         
-        # 2. Validamos el JWT con el Password del ambiente
+        # 2. Validamos el JWT con el Password correspondiente (HS256)
         payload = jwt.decode(token, pwd_esperado, algorithms=["HS256"])
         
         # 3. Validamos que el Login (iss) coincida
         if payload.get("iss") != login_esperado:
             return False, "Login (iss) no coincide"
             
-        # 4. Si todo es correcto, enviamos los datos al Excel
+        # 4. Enviamos los datos al Excel
         datos = request.get_json()
         datos['Ambiente'] = ambiente_nombre
         requests.post(SCRIPT_URL, json=datos, timeout=15)
@@ -42,7 +42,6 @@ def validar_y_procesar(token_auth, login_esperado, pwd_esperado, ambiente_nombre
         return False, str(e)
 
 # 🚀 ENDPOINT DE PRODUCCIÓN
-# URL: https://inversiones-rc-prod.onrender.com/webhook-bnc
 @app.route('/webhook-bnc', methods=['POST'])
 def webhook_produccion():
     token_auth = request.headers.get("Authorization")
@@ -53,7 +52,6 @@ def webhook_produccion():
     return jsonify({"status": "error", "message": msg}), 401
 
 # 🧪 ENDPOINT DE DESARROLLO
-# URL: https://inversiones-rc-prod.onrender.com/webhook-bnc-dev
 @app.route('/webhook-bnc-dev', methods=['POST'])
 def webhook_desarrollo():
     token_auth = request.headers.get("Authorization")
@@ -64,6 +62,7 @@ def webhook_desarrollo():
     return jsonify({"status": "error", "message": msg}), 401
 
 if __name__ == '__main__':
-    # Render asigna el puerto automáticamente
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
+
