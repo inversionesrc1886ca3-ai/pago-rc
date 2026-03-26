@@ -1,6 +1,4 @@
 gunicorn
 Flask
 Flask-Cors
-gspread
-oauth2client
-cryptography
+requests
