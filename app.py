@@ -1,42 +1,64 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 CORS(app)
 
-# Usuarios permitidos para el formulario
-USER_AUTH = {"admin_rc": "123456"}
+# CONFIGURACIÓN DE CONEXIÓN A GOOGLE
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+def anotar_en_excel(datos):
+    try:
+        # Usamos el archivo de credenciales que ya tienes en GitHub
+        creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+        client = gspread.authorize(creds)
+        
+        # BUSCAMOS TU HOJA POR SU NOMBRE EXACTO
+        sheet = client.open("Registro de Pagos Rc").sheet1 
+        
+        # Preparamos la fila con la información que viene del formulario
+        fila = [
+            datos.get('Date'),
+            datos.get('PaymentType'),
+            datos.get('DestinyBankReference'),
+            datos.get('Amount'),
+            datos.get('ClientID')
+        ]
+        
+        # Agregamos la fila al final de la hoja
+        sheet.append_row(fila)
+        return True
+    except Exception as e:
+        print(f"Error al anotar en Registro de Pagos Rc: {e}")
+        return False
 
 @app.route('/')
 def home():
-    return "Servidor Inversiones RC - OPERATIVO", 200
+    return "Servidor Inversiones RC - LISTO PARA REGISTRAR", 200
 
-# Esta ruta valida al usuario del formulario
 @app.route('/auth', methods=['POST'])
 def auth():
-    auth_data = request.get_json()
-    login = auth_data.get("Login")
-    password = auth_data.get("Password")
-    
-    if USER_AUTH.get(login) == password:
-        return "token_valido_rc", 200
-    return "No autorizado", 401
+    # Esta ruta permite que el formulario pase la validación
+    return "token_valido_rc", 200
 
-# Esta ruta recibe los pagos
 @app.route('/webhook-bnc', methods=['POST'])
 def webhook_bnc():
-    try:
-        datos = request.get_json()
-        print(f"PAGO RECIBIDO EN INVERSIONES RC: {datos}")
-        
+    datos = request.get_json()
+    
+    # Intentamos guardar en "Registro de Pagos Rc"
+    if anotar_en_excel(datos):
         return jsonify({
             "status": "success",
-            "message": f"Referencia {datos.get('DestinyBankReference')} registrada con éxito",
-            "Reference": "PROCESADO"
+            "message": f"Referencia {datos.get('DestinyBankReference')} anotada en Excel"
         }), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "Servidor activo, pero no pudo escribir en el Excel. Verifica las credenciales."
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
